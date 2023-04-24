@@ -41,7 +41,7 @@ const getMovies = (req, res) => {
 
 const getMovieById = (req, res) => {
   const id = parseInt(req.params.id);
-  const movie = movies.find((movie) => movie.id === id);
+  const movie = movies.find((movie) => movie.id == id);
   database.query("select * from movies where id = ?", [id])
   .then(() => {
     movie != null ? res.json(movie) : res.status(404).send("Not found");
