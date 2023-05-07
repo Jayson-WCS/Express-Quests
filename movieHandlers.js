@@ -44,13 +44,31 @@ const getMovieById = (req, res) => {
   const movie = movies.find((movie) => movie.id == id);
   database.query("select * from movies where id = ?", [id])
   .then(() => {
-    movie != null ? res.json(movie) : res.status(404).send("Not found");
+    movie !== null ? res.json(movie) : res.status(404).send("Not found");
   }).catch((err) => {
     res.status(500).send(`Error retrieving data : ${err}`);
   })
 };
 
+const postMovies = (req,res) => {
+  const {title, director, year, color, duration} = req.body;
+  console.log(req.body);
+
+  database
+    .query("INSERT INTO movies(title, director, year, color, duration) VALUES (?,?,?,?,?)", 
+      [title, director, year, color, duration])
+    .then(([result]) => {
+      console.log(result);
+      res.location(`/api/movies/${result.insertId}`).sendStatus(201);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error saving the movie");
+    });
+}
+
 module.exports = {
   getMovies,
   getMovieById,
+  postMovies,
 };
