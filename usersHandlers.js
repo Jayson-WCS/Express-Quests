@@ -14,7 +14,7 @@ const getUsers = (req, res) => {
 
 const getUserById = (req, res) => {
   const id = parseInt(req.params.id);
-  database.query("select * from users where id = ?", [id])
+  database.query("SELECT * FROM users WHERE id = ?", [id])
     .then((users) => {
       if (users.length === 0) {
         res.status(404).send("Not found");
@@ -42,8 +42,28 @@ const postUsers = (req, res) => {
   })
 }
 
+const updateUsers = (req,res) => {
+  const {firstname, lastname, email, city, language} = req.body;
+  const id = req.params.id;
+
+  database.query("UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ? WHERE id = ?",
+  [firstname, lastname, email, city, language, id])
+  .then(([result]) => {
+    console.log(result);
+    if(result.affectedRows === 0) {
+      res.status(404).send("Not found");
+    } else {
+      res.status(204);
+    }
+  })
+  .catch((err) => {console.error(err);
+    res.status(500).send("Error updating user entry");
+  })
+}
+
 module.exports = {
   getUsers, 
   getUserById,
   postUsers,
+  updateUsers,
 }

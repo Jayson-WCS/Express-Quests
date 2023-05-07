@@ -67,8 +67,30 @@ const postMovies = (req,res) => {
     });
 }
 
+const updateMovies = (req,res) => {
+  const {title, director, year, color, duration} = req.body;
+  const id = parseInt(req.params.id);
+  console.log(req.body, req.params.id);
+
+  database.query("UPDATE movies SET title = ?, director = ?, year = ?, color = ?, duration = ? WHERE id = ?",
+  [title, director, year, color, duration, id])
+  .then(([result]) => {
+    console.log(result);
+    if( result.affectedRows === 0 ) {
+      res.status(404).send("Not found");
+    } else {
+      res.status(204);
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    res.status(500).send("Error updating the movie entry");
+  })
+}
+
 module.exports = {
   getMovies,
   getMovieById,
   postMovies,
+  updateMovies,
 };
