@@ -45,40 +45,89 @@ const getUserById = (req, res) => {
     });
 };
 
-const postUsers = (req, res) => {
-  const {firstname, lastname, email, city, language} = req.body;
-
-  database
-  .query("INSERT INTO users(firstname, lastname, email, city, language) VALUES (?,?,?,?,?)", [firstname, lastname, email, city, language])
-  .then(([result]) => {
-    console.log(result);
-    res.location(`/api/users/${result.insertId}`).sendStatus(201);
-  })
-  .catch((err) => {
+const postUsers = async (req, res) => {
+  const { firstname, lastname, email, city, language, password } = req.body;
+  try {
+    const hashedPassword = await argon2.hash(password);
+    database
+      .query(
+        "INSERT INTO users(firstname, lastname, email, city, language, password) VALUES (?,?,?,?,?,?)",
+        [firstname, lastname, email, city, language, hashedPassword]
+      )
+      .then(([result]) => {
+        console.log(result);
+        res.location(`/api/users/${result.insertId}`).sendStatus(201);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error saving user");
+      });
+  } catch (err) {
     console.error(err);
-    res.status(500).send("Error saving user");
-  })
-}
+    res.status(500).send("Error hashing password");
+  }
+};
 
-const updateUsers = (req,res) => {
-  const {firstname, lastname, email, city, language} = req.body;
+
+const updateUsers = async (req, res) => {
+  const { firstname, lastname, email, city, language, password } = req.body;
   const id = req.params.id;
 
-  database
-  .query("UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ? WHERE id = ?",
-  [firstname, lastname, email, city, language, id])
-  .then(([result]) => {
-    console.log(result);
-    if(result.affectedRows === 0) {
-      res.status(404).send("Not found");
-    } else {
-      res.status(204);
+  try {
+    let hashedPassword;
+    if (password) {
+      hashedPassword = await argon2.hash(password);
     }
-  })
-  .catch((err) => {console.error(err);
-    res.status(500).send("Error updating user entry");
-  })
-}
+    const queryParameters = [];
+    let query = "UPDATE users SET";
+    if (firstname) {
+      query += " firstname = ?,";
+      queryParameters.push(firstname);
+    }
+    if (lastname) {
+      query += " lastname = ?,";
+      queryParameters.push(lastname);
+    }
+    if (email) {
+      query += " email = ?,";
+      queryParameters.push(email);
+    }
+    if (city) {
+      query += " city = ?,";
+      queryParameters.push(city);
+    }
+    if (language) {
+      query += " language = ?,";
+      queryParameters.push(language);
+    }
+    if (hashedPassword) {
+      query += " password = ?,";
+      queryParameters.push(hashedPassword);
+    }
+    query = query.slice(0, -1);
+    query += " WHERE id = ?";
+    queryParameters.push(id);
+    
+    database
+      .query(query, queryParameters)
+      .then(([result]) => {
+        console.log(result);
+        if (result.affectedRows === 0) {
+          res.status(404).send("Not found");
+        } else {
+          res.sendStatus(204);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error updating user entry");
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error hashing password");
+  }
+};
+
 
 const removeUsers = (req,res) => {
   const id = req.params.id;
